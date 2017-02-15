@@ -58,7 +58,7 @@ static bool readLine(string& query)
 #else
    // Default fallback
    cerr << ">"; cerr.flush();
-   return getline(cin,query);
+   return (bool)getline(cin,query);
 #endif
 }
 //---------------------------------------------------------------------------
