@@ -68,7 +68,7 @@ void ActionRegistry::registerAction(unsigned segmentId,unsigned actionId,LogActi
    actions[actionId]=action;
 }
 //---------------------------------------------------------------------------
-LogAction* ActionRegistry::lookupAction(unsigned segmentId,unsigned actionId)
+/*LogAction* ActionRegistry::lookupAction(unsigned segmentId,unsigned actionId)
    // Lookup an action
 {
    if (!registeredActions)
@@ -79,7 +79,7 @@ LogAction* ActionRegistry::lookupAction(unsigned segmentId,unsigned actionId)
    if (actionId>=actions.size())
       return 0;
    return actions[actionId];
-}
+}*/
 //---------------------------------------------------------------------------
 /// The helper
 static ActionRegistry actionRegistry;

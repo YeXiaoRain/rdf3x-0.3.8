@@ -204,7 +204,7 @@ int main(int argc,char* argv[])
       dumpPredicate(dic,predicate.value);
       cout << " ";
       dumpObject(dic,object.value);
-      unsigned lastSubject=subject.value,lastPredicate=predicate.value,lastObject=object.value;
+      unsigned lastSubject=subject.value,lastPredicate=predicate.value;//,lastObject=object.value;
 
       // And all others
       while (scan->next()) {
@@ -226,7 +226,7 @@ int main(int argc,char* argv[])
             cout << " ";
             dumpObject(dic,object.value);
          }
-         lastSubject=subject.value; lastPredicate=predicate.value; lastObject=object.value;
+         lastSubject=subject.value; lastPredicate=predicate.value; //lastObject=object.value;
       }
       // Termination
       cout << "." << endl;

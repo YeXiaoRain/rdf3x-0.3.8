@@ -239,20 +239,20 @@ SPARQLParser::Filter* SPARQLParser::parseIRIrefOrFunction(std::map<std::string,u
    // The IRI
    if (lexer.getNext()!=SPARQLLexer::IRI)
       throw ParserException("IRI expected");
-   auto_ptr<Filter> result(new Filter);
+   unique_ptr<Filter> result(new Filter);
    result->type=Filter::IRI;
    result->value=lexer.getIRIValue();
 
    // Arguments?
    if (lexer.hasNext(SPARQLLexer::LParen)) {
       lexer.getNext();
-      auto_ptr<Filter> call(new Filter);
+      unique_ptr<Filter> call(new Filter);
       call->type=Filter::Function;
       call->arg1=result.release();
       if (lexer.hasNext(SPARQLLexer::RParen)) {
          lexer.getNext();
       } else {
-         auto_ptr<Filter> args(new Filter);
+         unique_ptr<Filter> args(new Filter);
          Filter* tail=args.get();
          tail->type=Filter::ArgumentList;
          tail->arg1=parseExpression(localVars);
@@ -271,7 +271,7 @@ SPARQLParser::Filter* SPARQLParser::parseIRIrefOrFunction(std::map<std::string,u
          call->arg2=args.release();
       }
 
-      result=call;
+      result=std::move(call);
    } else if (mustCall) {
       throw ParserException("'(' expected");
    }
@@ -285,7 +285,7 @@ SPARQLParser::Filter* SPARQLParser::parseBuiltInCall(std::map<std::string,unsign
    if (lexer.getNext()!=SPARQLLexer::Identifier)
       throw ParserException("function name expected");
 
-   auto_ptr<Filter> result(new Filter);
+   unique_ptr<Filter> result(new Filter);
    if (lexer.isKeyword("STR")) {
       result->type=Filter::Builtin_str;
       result->arg1=parseBrackettedExpression(localVars);
@@ -311,7 +311,7 @@ SPARQLParser::Filter* SPARQLParser::parseBuiltInCall(std::map<std::string,unsign
          throw ParserException("'(' expected");
       if (lexer.getNext()!=SPARQLLexer::Variable)
          throw ParserException("variable expected as argument to BOUND");
-      auto_ptr<Filter> arg(new Filter());
+      unique_ptr<Filter> arg(new Filter());
       arg->type=Filter::Variable;
       arg->valueArg=nameVariable(lexer.getTokenValue());
       if (lexer.getNext()!=SPARQLLexer::RParen)
@@ -363,7 +363,7 @@ SPARQLParser::Filter* SPARQLParser::parseBuiltInCall(std::map<std::string,unsign
       } else {
          if (lexer.getNext()!=SPARQLLexer::Comma)
             throw ParserException("',' expected");
-         auto_ptr<Filter> args(new Filter);
+         unique_ptr<Filter> args(new Filter);
          Filter* tail=args.get();
          tail->type=Filter::ArgumentList;
          tail->arg1=parseExpression(localVars);
@@ -398,14 +398,14 @@ SPARQLParser::Filter* SPARQLParser::parsePrimaryExpression(map<string,unsigned>&
    }
    if (token==SPARQLLexer::Identifier) {
       if (lexer.isKeyword("true")) {
-         auto_ptr<Filter> result(new Filter);
+         unique_ptr<Filter> result(new Filter);
          result->type=Filter::Literal;
          result->value="true";
          result->valueType="http://www.w3.org/2001/XMLSchema#boolean";
          result->valueArg=Element::CustomType;
          return result.release();
       } else if (lexer.isKeyword("false")) {
-         auto_ptr<Filter> result(new Filter);
+         unique_ptr<Filter> result(new Filter);
          result->type=Filter::Literal;
          result->value="false";
          result->valueType="http://www.w3.org/2001/XMLSchema#boolean";
@@ -421,7 +421,7 @@ SPARQLParser::Filter* SPARQLParser::parsePrimaryExpression(map<string,unsigned>&
    }
    if (token==SPARQLLexer::String) {
       lexer.unget(token);
-      auto_ptr<Filter> result(new Filter);
+      unique_ptr<Filter> result(new Filter);
       result->type=Filter::Literal;
       Element::SubType type;
       parseRDFLiteral(result->value,type,result->valueType);
@@ -429,7 +429,7 @@ SPARQLParser::Filter* SPARQLParser::parsePrimaryExpression(map<string,unsigned>&
       return result.release();
    }
    if (token==SPARQLLexer::Integer) {
-      auto_ptr<Filter> result(new Filter);
+      unique_ptr<Filter> result(new Filter);
       result->type=Filter::Literal;
       result->value=lexer.getTokenValue();
       result->valueType="http://www.w3.org/2001/XMLSchema#integer";
@@ -437,7 +437,7 @@ SPARQLParser::Filter* SPARQLParser::parsePrimaryExpression(map<string,unsigned>&
       return result.release();
    }
    if (token==SPARQLLexer::Decimal) {
-      auto_ptr<Filter> result(new Filter);
+      unique_ptr<Filter> result(new Filter);
       result->type=Filter::Literal;
       result->value=lexer.getTokenValue();
       result->valueType="http://www.w3.org/2001/XMLSchema#decimal";
@@ -445,7 +445,7 @@ SPARQLParser::Filter* SPARQLParser::parsePrimaryExpression(map<string,unsigned>&
       return result.release();
    }
    if (token==SPARQLLexer::Double) {
-      auto_ptr<Filter> result(new Filter);
+      unique_ptr<Filter> result(new Filter);
       result->type=Filter::Literal;
       result->value=lexer.getTokenValue();
       result->valueType="http://www.w3.org/2001/XMLSchema#double";
@@ -453,7 +453,7 @@ SPARQLParser::Filter* SPARQLParser::parsePrimaryExpression(map<string,unsigned>&
       return result.release();
    }
    if (token==SPARQLLexer::Variable) {
-      auto_ptr<Filter> result(new Filter);
+      unique_ptr<Filter> result(new Filter);
       result->type=Filter::Variable;
       result->value=lexer.getTokenValue();
       result->valueArg=nameVariable(result->value);
@@ -468,17 +468,17 @@ SPARQLParser::Filter* SPARQLParser::parseUnaryExpression(map<string,unsigned>& l
    SPARQLLexer::Token token=lexer.getNext();
 
    if (token==SPARQLLexer::Not) {
-      auto_ptr<Filter> result(new Filter);
+      unique_ptr<Filter> result(new Filter);
       result->type=Filter::Not;
       result->arg1=parsePrimaryExpression(localVars);
       return result.release();
    } else if (token==SPARQLLexer::Plus) {
-      auto_ptr<Filter> result(new Filter);
+      unique_ptr<Filter> result(new Filter);
       result->type=Filter::UnaryPlus;
       result->arg1=parsePrimaryExpression(localVars);
       return result.release();
    } else if (token==SPARQLLexer::Minus) {
-      auto_ptr<Filter> result(new Filter);
+      unique_ptr<Filter> result(new Filter);
       result->type=Filter::UnaryMinus;
       result->arg1=parsePrimaryExpression(localVars);
       return result.release();
@@ -491,15 +491,15 @@ SPARQLParser::Filter* SPARQLParser::parseUnaryExpression(map<string,unsigned>& l
 SPARQLParser::Filter* SPARQLParser::parseMultiplicativeExpression(map<string,unsigned>& localVars)
    // Parse a "MultiplicativeExpression" production
 {
-   auto_ptr<Filter> result(parseUnaryExpression(localVars));
+   unique_ptr<Filter> result(parseUnaryExpression(localVars));
 
    // op *
    while (true) {
       SPARQLLexer::Token token=lexer.getNext();
       if ((token==SPARQLLexer::Mul)||(token==SPARQLLexer::Div)) {
-         auto_ptr<Filter> right(parseUnaryExpression(localVars));
+         unique_ptr<Filter> right(parseUnaryExpression(localVars));
 
-         auto_ptr<Filter> newEntry(new Filter);
+         unique_ptr<Filter> newEntry(new Filter);
          switch (token) {
             case SPARQLLexer::Mul: newEntry->type=Filter::Mul; break;
             case SPARQLLexer::Div: newEntry->type=Filter::Div; break;
@@ -507,7 +507,7 @@ SPARQLParser::Filter* SPARQLParser::parseMultiplicativeExpression(map<string,uns
          }
          newEntry->arg1=result.release();
          newEntry->arg2=right.release();
-         result=newEntry;
+         result=std::move(newEntry);
       } else {
          lexer.unget(token);
          break;
@@ -519,15 +519,15 @@ SPARQLParser::Filter* SPARQLParser::parseMultiplicativeExpression(map<string,uns
 SPARQLParser::Filter* SPARQLParser::parseAdditiveExpression(map<string,unsigned>& localVars)
    // Parse a "AdditiveExpression" production
 {
-   auto_ptr<Filter> result(parseMultiplicativeExpression(localVars));
+   unique_ptr<Filter> result(parseMultiplicativeExpression(localVars));
 
    // op *
    while (true) {
       SPARQLLexer::Token token=lexer.getNext();
       if ((token==SPARQLLexer::Plus)||(token==SPARQLLexer::Minus)) {
-         auto_ptr<Filter> right(parseMultiplicativeExpression(localVars));
+         unique_ptr<Filter> right(parseMultiplicativeExpression(localVars));
 
-         auto_ptr<Filter> newEntry(new Filter);
+         unique_ptr<Filter> newEntry(new Filter);
          switch (token) {
             case SPARQLLexer::Plus: newEntry->type=Filter::Plus; break;
             case SPARQLLexer::Minus: newEntry->type=Filter::Minus; break;
@@ -535,7 +535,7 @@ SPARQLParser::Filter* SPARQLParser::parseAdditiveExpression(map<string,unsigned>
          }
          newEntry->arg1=result.release();
          newEntry->arg2=right.release();
-         result=newEntry;
+         result=std::move(newEntry);
       } else {
          lexer.unget(token);
          break;
@@ -553,15 +553,15 @@ SPARQLParser::Filter* SPARQLParser::parseNumericExpression(map<string,unsigned>&
 SPARQLParser::Filter* SPARQLParser::parseRelationalExpression(map<string,unsigned>& localVars)
    // Parse a "RelationalExpression" production
 {
-   auto_ptr<Filter> result(parseNumericExpression(localVars));
+   unique_ptr<Filter> result(parseNumericExpression(localVars));
 
    // op *
    while (true) {
       SPARQLLexer::Token token=lexer.getNext();
       if ((token==SPARQLLexer::Equal)||(token==SPARQLLexer::NotEqual)||(token==SPARQLLexer::Less)||(token==SPARQLLexer::LessOrEqual)||(token==SPARQLLexer::Greater)||(token==SPARQLLexer::GreaterOrEqual)) {
-         auto_ptr<Filter> right(parseNumericExpression(localVars));
+         unique_ptr<Filter> right(parseNumericExpression(localVars));
 
-         auto_ptr<Filter> newEntry(new Filter);
+         unique_ptr<Filter> newEntry(new Filter);
          switch (token) {
             case SPARQLLexer::Equal: newEntry->type=Filter::Equal; break;
             case SPARQLLexer::NotEqual: newEntry->type=Filter::NotEqual; break;
@@ -573,7 +573,7 @@ SPARQLParser::Filter* SPARQLParser::parseRelationalExpression(map<string,unsigne
          }
          newEntry->arg1=result.release();
          newEntry->arg2=right.release();
-         result=newEntry;
+         result=std::move(newEntry);
       } else {
          lexer.unget(token);
          break;
@@ -591,20 +591,20 @@ SPARQLParser::Filter* SPARQLParser::parseValueLogical(map<string,unsigned>& loca
 SPARQLParser::Filter* SPARQLParser::parseConditionalAndExpression(map<string,unsigned>& localVars)
    // Parse a "ConditionalAndExpression" production
 {
-   auto_ptr<Filter> result(parseValueLogical(localVars));
+   unique_ptr<Filter> result(parseValueLogical(localVars));
 
    // && *
    while (lexer.hasNext(SPARQLLexer::And)) {
       if (lexer.getNext()!=SPARQLLexer::And)
          throw ParserException("'&&' expected");
-      auto_ptr<Filter> right(parseValueLogical(localVars));
+      unique_ptr<Filter> right(parseValueLogical(localVars));
 
-      auto_ptr<Filter> newEntry(new Filter);
+      unique_ptr<Filter> newEntry(new Filter);
       newEntry->type=Filter::And;
       newEntry->arg1=result.release();
       newEntry->arg2=right.release();
 
-      result=newEntry;
+      result=std::move(newEntry);
    }
    return result.release();
 }
@@ -612,20 +612,20 @@ SPARQLParser::Filter* SPARQLParser::parseConditionalAndExpression(map<string,uns
 SPARQLParser::Filter* SPARQLParser::parseConditionalOrExpression(map<string,unsigned>& localVars)
    // Parse a "ConditionalOrExpression" production
 {
-   auto_ptr<Filter> result(parseConditionalAndExpression(localVars));
+   unique_ptr<Filter> result(parseConditionalAndExpression(localVars));
 
    // || *
    while (lexer.hasNext(SPARQLLexer::Or)) {
       if (lexer.getNext()!=SPARQLLexer::Or)
          throw ParserException("'||' expected");
-      auto_ptr<Filter> right(parseConditionalAndExpression(localVars));
+      unique_ptr<Filter> right(parseConditionalAndExpression(localVars));
 
-      auto_ptr<Filter> newEntry(new Filter);
+      unique_ptr<Filter> newEntry(new Filter);
       newEntry->type=Filter::Or;
       newEntry->arg1=result.release();
       newEntry->arg2=right.release();
 
-      result=newEntry;
+      result=std::move(newEntry);
    }
    return result.release();
 }
@@ -644,7 +644,7 @@ SPARQLParser::Filter* SPARQLParser::parseBrackettedExpression(map<string,unsigne
       throw ParserException("'(' expected");
 
    // Expression
-   auto_ptr<Filter> result(parseExpression(localVars));
+   unique_ptr<Filter> result(parseExpression(localVars));
 
    // ')'
    if (lexer.getNext()!=SPARQLLexer::RParen)

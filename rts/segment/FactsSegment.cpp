@@ -181,7 +181,7 @@ static unsigned char* writeDelta(unsigned char* writer,unsigned value)
 unsigned FactsSegment::IndexImplementation::packLeafEntries(unsigned char* writer,unsigned char* writerLimit,vector<FactsSegment::IndexImplementation::LeafEntry>::const_iterator entriesStart,vector<FactsSegment::IndexImplementation::LeafEntry>::const_iterator entriesLimit)
    // Pack the facts into leaves using prefix compression
 {
-   unsigned lastValue1,lastValue2,lastValue3,lastDeleted;
+   unsigned lastValue1,lastValue2,lastValue3;//,lastDeleted;
    // we need a copy of deleted values, but we don't want to put them into lastValues because the compression should not be applied for them
    unsigned lastDeleted1=0, lastDeleted2=0, lastDeleted3=0;
    //number of deleted first triples
@@ -218,7 +218,7 @@ unsigned FactsSegment::IndexImplementation::packLeafEntries(unsigned char* write
    Segment::writeUint32Aligned(writer,lastValue1=(*entriesStart).value1);
    Segment::writeUint32Aligned(writer+4,lastValue2=(*entriesStart).value2);
    Segment::writeUint32Aligned(writer+8,lastValue3=(*entriesStart).value3);
-   lastDeleted=(*entriesStart).deleted;
+   //lastDeleted=(*entriesStart).deleted;
    writer+=12;
    if (((*entriesStart).created!=created)||((*entriesStart).deleted!=deleted)) {
       if ((writer+9)>writerLimit)
@@ -237,7 +237,7 @@ unsigned FactsSegment::IndexImplementation::packLeafEntries(unsigned char* write
       // Delete the triple
       if (~(*iter).deleted){
    	     printf("   deleting the tuple!\n");
-         lastDeleted1=value1; lastDeleted2=value2; lastDeleted3=value3; lastDeleted=(*iter).deleted;
+         lastDeleted1=value1; lastDeleted2=value2; lastDeleted3=value3; //lastDeleted=(*iter).deleted;
    	     continue;
       }
 
@@ -367,7 +367,7 @@ unsigned FactsSegment::IndexImplementation::packLeafEntries(unsigned char* write
          writer=writeDelta(writer,value2);
          writer=writeDelta(writer,value3);
       }
-      lastValue1=value1; lastValue2=value2; lastValue3=value3; lastDeleted=(*iter).deleted;
+      lastValue1=value1; lastValue2=value2; lastValue3=value3; //lastDeleted=(*iter).deleted;
    }
 
    // Done, everything fitted
